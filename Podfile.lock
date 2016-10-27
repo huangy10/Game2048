@@ -1,0 +1,15 @@
+PODS:
+  - Dollar (6.0.0)
+  - SnapKit (3.0.1)
+
+DEPENDENCIES:
+  - Dollar
+  - SnapKit (~> 3.0)
+
+SPEC CHECKSUMS:
+  Dollar: 6e69123e0901307d67a416dac70aeec56243a6e0
+  SnapKit: f818b8326d45b4e1c777d0ab27b5c0a3624bfdeb
+
+PODFILE CHECKSUM: 81d96789e42488c084ed252c3d44d22bad7000e2
+
+COCOAPODS: 1.1.0.beta.2
