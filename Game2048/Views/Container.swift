@@ -27,6 +27,7 @@ class Container: UIViewController {
     var tileMatrx: [UIView] = []
     var foreGroundTiles: [Int: TileView] = [:]
     var scoreLbl: UILabel!
+    var restartBtn: UIButton!
     
     var needsToBeRemoved: [UIView] = []
     
@@ -46,8 +47,25 @@ class Container: UIViewController {
         configureTileMatrix()
         configureScoreLbl()
         configureGestureRecognizers()
+        configureRestartBtn()
         
         restart()
+    }
+    
+    func configureRestartBtn() {
+        restartBtn = UIButton()
+        restartBtn.addTarget(self, action: #selector(restart), for: .touchUpInside)
+        view.addSubview(restartBtn)
+        restartBtn.setTitle("Restart", for: .normal)
+        restartBtn.setTitleColor(.white, for: .normal)
+        restartBtn.backgroundColor = color.tileBackgroundColor()
+        restartBtn.layer.cornerRadius = 6
+        restartBtn.snp.makeConstraints { (make) in
+            make.right.equalTo(board)
+            make.top.equalTo(view).offset(20)
+            make.width.equalTo(70)
+            make.height.equalTo(30)
+        }
     }
     
     func configureScoreLbl() {
@@ -126,25 +144,19 @@ class Container: UIViewController {
     }
     
     func updateScore() {
-        scoreLbl.text = "\(data.score)"
+        scoreLbl.text = "Score: \(data.score)"
     }
     
     func configureGestureRecognizers() {
-        let swipe_right = UISwipeGestureRecognizer(target: self, action: #selector(swiped(_:)))
-        swipe_right.direction = UISwipeGestureRecognizerDirection.right
-        view.addGestureRecognizer(swipe_right)
-        
-        let swipe_left = UISwipeGestureRecognizer(target: self, action: #selector(swiped(_:)))
-        swipe_left.direction = UISwipeGestureRecognizerDirection.left
-        view.addGestureRecognizer(swipe_left)
-        
-        let swipe_up = UISwipeGestureRecognizer(target: self, action: #selector(swiped(_:)))
-        swipe_up.direction = UISwipeGestureRecognizerDirection.up
-        view.addGestureRecognizer(swipe_up)
-        
-        let swipe_down = UISwipeGestureRecognizer(target: self, action: #selector(swiped(_:)))
-        swipe_down.direction = UISwipeGestureRecognizerDirection.down
-        view.addGestureRecognizer(swipe_down)
+        createGestureRecognizer(withDirections: [.up, .down, .right, .left]).forEach({ view.addGestureRecognizer($0) })
+    }
+    
+    func createGestureRecognizer(withDirections directions: [UISwipeGestureRecognizerDirection]) -> [UIGestureRecognizer]{
+        return directions.map({ (dir) -> UIGestureRecognizer in
+            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(swiped(_:)))
+            swipe.direction = dir
+            return swipe
+        })
     }
     
     func swiped(_ swipe: UISwipeGestureRecognizer) {
@@ -173,26 +185,27 @@ class Container: UIViewController {
             }
             return
         }
-        let moves = actions.filter({ $0.val < 0 })
-        let news = actions.filter({ $0.val >= 0 })
-        for action in moves {
-            moveTile(from: data.coordinateToIndex(action.src), to: data.coordinateToIndex(action.trg))
-        }
+        
+        actions.filter({ $0.val < 0 }).forEach({ moveTile(from: data.coordinateToIndex($0.src), to: data.coordinateToIndex($0.trg)) })
         UIView.animate(withDuration: 0.1, animations: {
             self.view.layoutIfNeeded()
         })
-        for action in news {
-            showNewTile(at: data.coordinateToIndex(action.trg), withVal: action.val)
-        }
+        
+        actions.filter({ $0.val >= 0 }).forEach({ showNewTile(at: data.coordinateToIndex($0.trg), withVal: $0.val) })
         
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.21) {
-            for view in self.needsToBeRemoved {
-                view.removeFromSuperview()
-            }
+            self.removeViewsNeededToBeRemoved()
             self.addNewRandomTile(animated: true)
             self.updateScore()
         }
+    }
+    
+    func removeViewsNeededToBeRemoved() {
+        for view in needsToBeRemoved {
+            view.removeFromSuperview()
+        }
+        needsToBeRemoved.removeAll()
     }
     
     func moveTile(from idx1: Int, to idx2: Int) {

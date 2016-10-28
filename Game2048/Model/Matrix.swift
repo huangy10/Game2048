@@ -138,24 +138,6 @@ struct MoveAction {
 }
 
 class MoveCommand {
-//    func plan(on matrix: inout Matrix) -> Bool {
-//        var atLeastOneMoveMade = false
-//        (0..<matrix.getDimension()).forEach { (col) in
-//            let tiles = getOneLine(forDimension: matrix.getDimension(), at: col)
-//            let tilesVal = tiles.map({ matrix[$0] })
-//            let movables = collapse(getMovableTiles(from: tilesVal))
-//            if movables.count != tiles.count {
-//                atLeastOneMoveMade = true
-//            } else {
-//                for movable in movables {
-//                    if movable.src != movable.trg {
-//                        atLeastOneMoveMade = true
-//                    }
-//                }
-//            }
-//        }
-//        return atLeastOneMoveMade
-//    }
     
     func getCoordinate(forIndex index: Int, withOffset offset: Int, dimension: Int) -> MatrixCoordinate {
         fatalError("Not implemented")
