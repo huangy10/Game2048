@@ -28,7 +28,7 @@ struct Matrix {
     }
     
     
-    /// 调试用函数，答应整个矩阵
+    /// 调试用函数，打印整个矩阵
     func printSelf() {
         for row in 0..<dimension {
             var temp: [Int] = []
@@ -440,14 +440,18 @@ class GameModel {
     
     /// 执行一个移动命令
     func perform(move command: MoveCommand) -> [MoveAction] {
+        // 最后生成的可供UI解析的移动命令
         var actions: [MoveAction] = []
         var newMatrix = matrix
         newMatrix.clearAll()
+        // 逐行或者逐列进行遍历（具体取决于滑动方向）
         (0..<matrix.getDimension()).forEach { (index) in
+            // 提取出一维问题，注意这里提取的是列或者行中所有格子的坐标
             let tiles = command.getOneLine(forDimension: matrix.getDimension(), at: index)
+            // 取出各个格子中的值
             let tilesVals = tiles.map({ matrix[$0] })
+            // 进行condense-collapse-condense操作
             let movables = command.collapse(command.getMovableTiles(from: tilesVals))
-            
             // 将movable tiles转化成move action
             for move in movables {
                 let trg = command.getCoordinate(forIndex: index, withOffset: move.trg, dimension: matrix.getDimension())
@@ -467,8 +471,10 @@ class GameModel {
                 }
             }
         }
+        // 应用计算完之后的结果
         self.matrix = newMatrix
         newMatrix.printSelf()
+        // 将需要UI执行的变化返回
         return actions
     }
     

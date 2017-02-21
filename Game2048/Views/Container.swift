@@ -177,24 +177,32 @@ class Container: UIViewController {
         print(result)
         self.move(withActions: result)
     }
-    
+
+    // 解析一次滑动产生的`MoveAction`操作列表
     func move(withActions actions: [MoveAction]) {
+        // 列表为空，那么有可能是用户已经无路可以走了
         if actions.count == 0 {
             if data.userHasLost() {
+                // 这里我们是直接自动重新开始游戏了，你也可以选择弹出提示框告诉用户已经失败
                 restart()
             }
             return
         }
         
+        // `val`字段小于0的MoveAction是指纯粹的移动。将这些指令筛选出来，进行移动操作
         actions.filter({ $0.val < 0 }).forEach({ moveTile(from: data.coordinateToIndex($0.src), to: data.coordinateToIndex($0.trg)) })
+        // 驱动移动动画
         UIView.animate(withDuration: 0.1, animations: {
             self.view.layoutIfNeeded()
         })
         
+        // `val`字段非负的MoveAction是指合并后新的格子的生成。将这些指令筛选出来，并构造新的Tile
         actions.filter({ $0.val >= 0 }).forEach({ showNewTile(at: data.coordinateToIndex($0.trg), withVal: $0.val) })
         
         
+        // 稍微等待一段很短的时间以后，在空格处插入一个新的格子，并且更新分数
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.21) {
+            // 注意在上面的操作之后，有一些格子需要移除，主要是合并的格子，在新的格子产生以后需要将原来的两个格子去掉
             self.removeViewsNeededToBeRemoved()
             self.addNewRandomTile(animated: true)
             self.updateScore()
@@ -202,33 +210,46 @@ class Container: UIViewController {
     }
     
     func removeViewsNeededToBeRemoved() {
+        // 需要被移除的格子被暂存在了`needsToBeRemoved`队列中
         for view in needsToBeRemoved {
             view.removeFromSuperview()
         }
         needsToBeRemoved.removeAll()
     }
     
+    // 处理格子的移动
     func moveTile(from idx1: Int, to idx2: Int) {
+        // `foreGroundTiles`是我们建立的一个由位置到格子的索引表
         guard let tileFrom = foreGroundTiles[idx1] else {
             assertionFailure()
             return
         }
         
+        // `tileMatrix`是placeholder的索引表
         let trgTilePh = tileMatrx[idx2]
+        
+        // 移动格子
         tileFrom.snp.remakeConstraints { (make) in
             make.edges.equalTo(trgTilePh)
         }
         
+        // 更新`foreGroundTiles`索引表
         foreGroundTiles[idx1] = nil
+        // 注意，这里是为了保证在目标位置在一次操作完成后总是最多只有一个格子。
+        // 设想在一次合并过程中，两个格子会一起移动到同一个目标位置，那么第二次
+        // 移动执行时，会把前一个移动到这里的格子标记为需要移除
         if let oldView = foreGroundTiles[idx2] {
             needsToBeRemoved.append(oldView)
         }
         foreGroundTiles[idx2] = tileFrom
     }
     
+    // 生成新的格子
     func showNewTile(at idx: Int, withVal val: Int) {
         let tile = createNewTile()
         tile.val = val
+        // 和上面moveTile(from:to:)末尾的注释接起来。新的格子生成后，会把之前第二个移动到这里的格子标记为
+        // 需要移除
         if let oldView = foreGroundTiles[idx] {
             needsToBeRemoved.append(oldView)
         }
@@ -237,9 +258,11 @@ class Container: UIViewController {
         let trgTilePh = tileMatrx[idx]
         
         view.addSubview(tile)
+        // 移动格子
         tile.snp.makeConstraints { (make) in
             make.edges.equalTo(trgTilePh)
         }
+        // 动画
         UIView.animate(withDuration: 0.1, delay: 0.05, animations: {
             tile.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
             }) { (_) in

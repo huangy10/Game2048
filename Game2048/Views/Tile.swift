@@ -10,11 +10,16 @@ import UIKit
 
 
 class TileView: UIView {
+    // 显示数字
     var valLbl: UILabel!
-
+    
+    // 在矩阵中的位置，row * dimension + col
     var loc: Int = -1
+    
+    // 颜色配置
     var color: ColorProvider!
     
+    // 数值
     var val: Int = 0 {
         didSet {
             valLbl.text = "\(val)"
